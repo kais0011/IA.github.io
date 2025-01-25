@@ -7,7 +7,7 @@ function checkEnter(event) {
 async function sendMessage() {
     const input = document.getElementById('message-input');
     const message = input.value;
-    
+
     if (message) {
         appendMessage('user', message);
         await processMessage(message);
@@ -37,16 +37,12 @@ async function processMessage(message) {
             response = `مرحبًا! كيف حالك؟ كيف يمكنني مساعدتك اليوم؟`;
         } else {
             const keywords = extractKeywords(message);
-            const limitedQueries = splitQuery(keywords.join(' '), 450); // تقسيم النصوص الكبيرة إلى أجزاء أصغر لضمان عدم تجاوز 500 حرف
+            const limitedQueries = splitQuery(keywords.join(' '), 450);
             const searchResults = await Promise.all(limitedQueries.map(query => searchInternet(query)));
 
             if (searchResults.length > 0) {
                 const combinedResult = searchResults.join(' ');
                 response = generateResponse(message, combinedResult);
-                const language = detectLanguage(message);
-                if (language !== 'en') {
-                    response = await translateText(response, language);
-                }
             } else {
                 response = `لم أجد إجابة مباشرة لسؤالك. هل تود أن أبحث عن شيء آخر أو توضيح السؤال؟`;
             }
@@ -86,8 +82,8 @@ function detectLanguage(message) {
 }
 
 function extractKeywords(message) {
-    return message.toLowerCase().split(' ').filter(word => 
-        word.length > 2 && 
+    return message.toLowerCase().split(' ').filter(word =>
+        word.length > 2 &&
         !['هل', 'ما', 'كم', 'ما', 'رأيك', 'تعتقد', 'هو', 'هي', 'أن', 'عن', 'في', 'على', 'من', 'لل', 'بال', 'و'].includes(word)
     );
 }
@@ -114,19 +110,25 @@ function splitQuery(query, maxLength) {
 }
 
 async function searchInternet(query) {
-    const searchUrl = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`;
-    
     try {
-        const response = await fetch(searchUrl, {
-            mode: 'cors'
-        });
-        const html = await response.text();
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
-        const results = doc.querySelectorAll('.result__snippet');
-        
-        if (results.length > 0) {
-            return Array.from(results).map(result => result.textContent).join(' ').slice(0, 450);  // تقصير النص لتجنب طول الاستعلام الزائد
+        // استخدام Wikipedia API للبحث
+        const response = await fetch(`https://ar.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&format=json&origin=*`);
+        const data = await response.json();
+
+        // استخراج النتائج
+        if (data.query && data.query.search) {
+            const results = data.query.search.map(result => result.snippet);
+
+            // إزالة العلامات من النتائج
+            const cleanResults = results.map(result => 
+                result.replace(/<[^>]+>/g, '') // إزالة جميع العلامات مثل <span> و</span>
+                      .replace(/&quot;/g, '"') // استبدال &quot; بعلامات الاقتباس
+                      .replace(/&amp;/g, '&')  // استبدال &amp; بعلامة &
+                      .replace(/&lt;/g, '<')   // استبدال &lt; بعلامة <
+                      .replace(/&gt;/g, '>')   // استبدال &gt; بعلامة >
+            );
+
+            return cleanResults.join(' ').slice(0, 450); // تقليل النص لتجنب طول الرسالة
         }
     } catch (error) {
         console.error('Error searching:', error);
@@ -134,18 +136,6 @@ async function searchInternet(query) {
     return '';
 }
 
-async function translateText(text, targetLang) {
-    try {
-        const response = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|${targetLang}`);
-        const data = await response.json();
-        return data.responseData.translatedText;
-    } catch (error) {
-        console.error('Error in translation:', error);
-        return text;
-    }
-}
-
 function generateResponse(question, searchResult) {
     return `بناءً على ما وجدت، ${searchResult}. هل يمكنني مساعدتك في شيء آخر؟`;
 }
-
