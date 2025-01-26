@@ -3,20 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>برنامج المحادثة</title>
-    <link rel="icon" href="data:,"> <!-- تعطيل favicon -->
+    <title id="app-title">برنامج المحادثة</title>
+    <link rel="icon" href="data:,">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-   
-    
     <div class="chat-container">
-        
         <div id="chat-window">
             <div id="progress" style="display: none;">
                 <div class="progress-bar"></div>
             </div>
-            
         </div>
         <input type="text" id="message-input" placeholder="اكتب رسالتك هنا..." onkeydown="checkEnter(event)">
         <button onclick="sendMessage()">إرسال</button>
@@ -41,7 +37,6 @@
         </script>
         <script type="text/javascript" src="//www.highperformanceformat.com/a10a1bf50ce990fc237e666b8fac6fd2/invoke.js"></script>
     </div>
-    
     <script src="script.js"></script>
 </body>
 </html>
